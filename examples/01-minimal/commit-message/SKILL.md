@@ -22,7 +22,7 @@ git diff --staged
 git log --oneline -10
 ```
 
-If nothing is staged, tell the user and ask whether to stage everything (`git add -A`) or stop. Use the log to match the repository's existing style (for example, whether it uses prefixes like `feat:` or `fix:`).
+If nothing is staged, tell the user and ask which specific changes to include. Do not stage unrelated files by default. Use the log to match the repository's existing style (for example, whether it uses prefixes like `feat:` or `fix:`).
 
 ### Step 2: Write the message
 

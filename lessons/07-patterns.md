@@ -45,10 +45,10 @@ Use the facts from Step 2.
 ```markdown
 ### Step 4: Check, then fix
 Run scripts/check_cards.py. Fix every error. Run it again.
-Stop when it reports 0 errors.
+Stop when it reports 0 errors. If the same failure persists after a repair, or a required dependency is unavailable, preserve the output and report what remains unverified.
 ```
 
-**Key moves:** an explicit quality bar; a script for the checks that can be automated ([lesson 5](05-scripts-and-references.md)); a checklist for the ones that can't; a clear **stopping condition** so the loop ends. *Seen in:* [flashcard-maker](../examples/02-with-references/flashcard-maker/SKILL.md), readme-organizer's Step 5.
+**Key moves:** an explicit quality bar; a script for the checks that can be automated ([lesson 5](05-scripts-and-references.md)); a checklist for the ones that can't; both a success condition and a failure exit so the loop ends. *Seen in:* [flashcard-maker](../examples/02-with-references/flashcard-maker/SKILL.md), readme-organizer's Step 5.
 
 ## 4. Choosing by context
 
@@ -81,10 +81,16 @@ Read references/card-writing.md: one fact per card, no give-aways, ...
 
 ## Combining patterns
 
-Real skills mix these. readme-organizer is a **sequential workflow** (Steps 1 to 6) that **chooses by context** (project type), adds **domain expertise** (writing rules), and ends in an **iterative refinement** loop (checker until 0 errors).
+Real skills mix these. readme-organizer is a **sequential workflow** (Steps 1 to 6) that **chooses by context** (project type), adds **domain expertise** (writing rules), and ends in an **iterative refinement** loop (check, repair, and report persistent failures).
 
 ## Exercise
 
 Think of a task you do in several steps (submitting an assignment, setting up a new project, preparing for a lab). Which pattern fits it best? Sketch the step headings.
+
+## Your deliverable
+
+A workflow sketch with only necessary dependencies.
+
+**Self-check:** Can it exit usefully when a tool fails?
 
 **Next:** [8. Publish and share](08-publishing.md)

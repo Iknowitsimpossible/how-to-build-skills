@@ -22,7 +22,7 @@ my-skill-repo/
 
 Why `skills/my-skill/` instead of putting `SKILL.md` at the root?
 
-- **The skill folder shouldn't contain a README.md.** Agents read `SKILL.md`; a README inside the skill is clutter at best and confusing at worst. But GitHub visitors need a README. Putting the skill in a subfolder gives both a home.
+- **Keep human-facing repository documentation separate when useful.** The open format permits a README inside a skill. A subfolder is a convenient publishing layout, not a loading requirement.
 - **Users install just the skill folder,** without your tests, CI config, and screenshots.
 - **It scales.** A second skill is just `skills/another-skill/`.
 
@@ -64,7 +64,7 @@ For Codex, the target is `~/.agents/skills/my-skill`. For claude.ai, users uploa
 
 ## CI
 
-Run the automatic checks on every push so a broken skill never reaches users:
+Run automatic checks on every push to catch structural and script regressions. Behavioral failures still require realistic tests:
 
 ```yaml
 name: CI
@@ -80,19 +80,20 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+      - run: python3 -m pip install -r requirements.txt
       - run: python3 tools/validate_skill.py skills
       - run: python3 -m unittest discover tests -v
 ```
 
-This repo's own [`ci.yml`](../.github/workflows/ci.yml) does the same for the examples. You can copy [`tools/validate_skill.py`](../tools/validate_skill.py) into your repo; it's MIT-licensed and has no dependencies.
+This repo's own [`ci.yml`](../.github/workflows/ci.yml) does the same for the examples. You can copy [`tools/validate_skill.py`](../tools/validate_skill.py) into your repo; it's MIT-licensed. Copy `requirements.txt` too, since YAML validation uses PyYAML.
 
 ## Before you publish: checklist
 
 - [ ] Folder name is kebab-case and matches `name`
 - [ ] `SKILL.md` spelled exactly; frontmatter has both `---` lines
 - [ ] Description has what, when (real phrases), and what not
-- [ ] No `<` or `>` in frontmatter; no secrets anywhere
-- [ ] No `README.md` inside the skill folder
+- [ ] Target-platform restrictions checked; no secrets anywhere
+- [ ] Additional files serve a useful purpose; no duplicated instructions
 - [ ] Every file `SKILL.md` mentions exists
 - [ ] Triggering, functional, and performance tests done ([lesson 6](06-testing.md))
 - [ ] Repo README with install steps for each agent you support
@@ -101,6 +102,12 @@ This repo's own [`ci.yml`](../.github/workflows/ci.yml) does the same for the ex
 
 ## After you publish
 
-Watch how it's actually used. If people keep invoking it by name, it's under-triggering; if they complain it shows up uninvited, it's over-triggering. Each report is a new test case and, usually, a one-line fix ([lesson 6](06-testing.md)).
+Watch how it's actually used. If people keep invoking it by name, it's under-triggering; if they complain it shows up uninvited, it's over-triggering. Treat reports as evidence to reproduce, then test the smallest useful correction ([lesson 6](06-testing.md)).
 
-**You've finished the lessons.** Pick an example, copy the [template](../templates/SKILL.template.md), and build your own.
+## Your deliverable
+
+A release checklist and tested installation steps.
+
+**Self-check:** Are format checks, platform compatibility, and observed behavior reported separately?
+
+**You've finished the lessons.** Pick an example, choose the [minimal](../templates/SKILL.minimal.md) or [workflow template](../templates/SKILL.template.md), and build your own.

@@ -62,4 +62,14 @@ The lesson: negative triggers are powerful, so test them as carefully as positiv
 
 - The structure of [`SKILL.md`](readme-organizer/SKILL.md): a one-line goal, `## Important`, numbered steps that each name exact commands, a classification table that picks one reference file, a validate-then-fix loop, examples taken from real runs, and a troubleshooting section.
 - The idea of a checker that the skill runs on its own output, with a manual fallback.
-- The habit of turning every bug found in testing into a specific line in the skill, and every fixed bug into a test case.
+- The habit of reproducing failures, making a targeted correction, and checking it on unfamiliar inputs. A correction can remove an instruction rather than add one.
+
+## Proposed next iteration: clearer recommendations
+
+[Draft PR #1](https://github.com/Iknowitsimpossible/readme-organizer/pull/1) proposes separating ready edits from missing assets and author decisions, giving each edit a stable ID and exact location, and validating an assembled candidate README instead of fenced snippets in a report.
+
+This is a proposal, not an established behavioral result. The draft's local checks passed, but a fresh end-to-end agent run and visual review were still outstanding when this chapter was written. Verify its current status before adopting it.
+
+Try the proposal on an unfamiliar README. Can a new reader select and apply a change without asking where it goes? Does validation catch a missing image in the candidate? Does a short README stay short? Record those outcomes before concluding the revision works better.
+
+The bundled v1.2.0 files remain a historical snapshot. In particular, their strict section order, pushed-state gate, and unbounded checker loop are choices to evaluate, not current universal recommendations. A repair loop should also exit on a persistent error or unavailable dependency.

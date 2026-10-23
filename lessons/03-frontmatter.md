@@ -18,7 +18,7 @@ That's enough to work. Everything else is optional.
 - 1 to 64 characters: lowercase letters, digits, and hyphens (kebab-case). No spaces, capitals, or underscores.
 - Can't start or end with a hyphen or contain `--`.
 - **Must match the folder name.** `name: commit-message` lives in `commit-message/`.
-- Don't use the words `claude` or `anthropic`; they're reserved.
+- For Claude compatibility, avoid reserved names containing `claude` or `anthropic`. This is a platform restriction, not a universal rule of the open format.
 
 | Name | OK? |
 |---|---|
@@ -26,11 +26,11 @@ That's enough to work. Everything else is optional.
 | `Commit-Message` | No: capitals |
 | `commit_message` | No: underscore |
 | `commit message` | No: space |
-| `claude-helper` | No: reserved word |
+| `claude-helper` | Claude compatibility restriction |
 
 ## `description`: what + when + what not
 
-The spec allows up to 1,024 characters. Use them. A good description has three parts:
+The spec allows up to 1,024 characters; this is a limit, not a target. Use the shortest description that makes selection clear. A description can include:
 
 1. **What it does**, starting with a verb, specific enough to tell it apart from other skills.
 2. **When to use it**: the phrases a user would actually type, and file types if relevant.
@@ -69,10 +69,10 @@ description: Turns lecture notes, slides, or a textbook chapter into study flash
 ### Description checklist
 
 - [ ] Starts with what the skill does, using a verb
-- [ ] Contains at least 3 phrases a real user would say
+- [ ] Uses plain language that matches the task; add example phrases only when they improve discovery
 - [ ] Mentions file types or tools if they matter (`.csv`, Anki, `package.json`)
 - [ ] Says what it's *not* for, if there's a nearby task it could be confused with
-- [ ] No `<` or `>` characters (see below)
+- [ ] Checked against the target platform's restrictions (see below)
 
 ## Optional fields from the open spec
 
@@ -96,16 +96,16 @@ metadata:
 | `metadata` | Anything else as key-value pairs: `author`, `version`, and so on |
 | `allowed-tools` | Tools the skill may use without asking. Experimental; support varies by agent. |
 
-Individual agents add their own fields too (Claude Code has `disable-model-invocation`, for example). They're covered on the [platform pages](../platforms/). Agents that don't know a field ignore it.
+Individual agents add their own fields too (Claude Code has `disable-model-invocation`, for example). They're covered on the [platform pages](../platforms/). Do not assume an unknown field will be honored or ignored consistently; check the target agent.
 
-## Rules that break loading
+## Format requirements and platform restrictions
 
 - **The `---` lines are required**, both of them.
 - **Close your quotes.** `description: "Does things` (no closing quote) is invalid YAML.
-- **No `<` or `>` anywhere in the frontmatter.** The frontmatter goes into the agent's system prompt, so angle brackets are banned to stop anyone from smuggling in fake XML-style instructions. Write "less than", not `<`.
+- **Platform restrictions:** some platform guidance restricts angle brackets or reserves names. The open specification does not make these universal YAML restrictions. The validator reports compatibility warnings; consult the target platform before publishing.
 - **Keep the description on one line** unless you know YAML block syntax well. It avoids most mistakes.
 
-Run the validator to catch all of these:
+After installing the repository dependencies, run the validator for YAML and structural checks. It also reports compatibility and style warnings; it cannot prove runtime behavior:
 
 ```bash
 python3 tools/validate_skill.py path/to/my-skill
@@ -123,5 +123,11 @@ description: Reviews a Python file for readability and suggests clearer names, s
 ```
 
 </details>
+
+## Your deliverable
+
+A valid name and concise description.
+
+**Self-check:** Can a reader distinguish this task from a nearby task without a long keyword list?
 
 **Next:** [4. Write the instructions](04-instructions.md)

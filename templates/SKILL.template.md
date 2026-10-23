@@ -1,11 +1,13 @@
 ---
 name: your-skill-name
-description: "[What it does, in one sentence with a verb]. [Key capabilities or file types]. Use when the user says \"[phrase 1]\", \"[phrase 2]\", or \"[phrase 3]\". Do NOT use for [nearby task that belongs to something else]."
+description: "[Specific outcome and when this skill is useful. Add examples or exclusions only to resolve likely ambiguity.]"
 license: MIT
 metadata:
   author: your-github-username
   version: 0.1.0
 ---
+
+<!-- Workflow template: delete sections that do not help this task. For a small skill, start with SKILL.minimal.md. -->
 
 # Your Skill Name
 
@@ -28,7 +30,7 @@ metadata:
 
 ### Step 2: [Do the main work]
 
-[Specific actions. If the work depends on the situation, give a short decision table and point to the right reference file:]
+[Describe the outcome and decision criteria. Prescribe exact actions only when needed for correctness. Delete this table unless conditional references are useful:]
 
 | If... | Then read |
 |---|---|
@@ -37,7 +39,7 @@ metadata:
 
 ### Step 3: [Check the result]
 
-Run `python3 scripts/[check].py [args]` and fix every error it reports. Repeat until it reports none.
+[If a checker is warranted, name it and declare its dependencies. Define success and a failure exit: fix errors and recheck, but stop and report a persistent failure or unavailable dependency. Do not invent a script just to fill this section.]
 
 Then confirm what a script can't check:
 
@@ -46,7 +48,7 @@ Then confirm what a script can't check:
 
 ### Step 4: [Report back]
 
-[What to show the user, and what to ask them before doing anything hard to undo.]
+[Show the result, checks actually performed, and any unresolved issues. Honor authorization already given; ask only for missing decisions or actions beyond the authorized scope.]
 
 ## Examples
 

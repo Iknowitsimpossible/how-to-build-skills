@@ -46,7 +46,7 @@ Save the deck as `<topic>-flashcards.csv` (Anki) or `<topic>-flashcards.txt` (Qu
 python3 scripts/check_cards.py <deck-file> --format anki      # or --format quizlet
 ```
 
-(`scripts/` is relative to this skill's folder.) It reports cards with an empty side, duplicate fronts, fronts that are too long, and lines with the wrong number of fields. Fix every error and run it again until it reports `0 error(s)`.
+(`scripts/` is relative to this skill's folder.) It reports cards with an empty side, duplicate fronts, fronts that are too long, and lines with the wrong number of fields. Fix errors and recheck. Stop when it reports `0 error(s)`. If the same failure persists after a repair, or Python is unavailable, preserve the deck and report what remains unverified; use the manual fallback below when practical.
 
 **If you can't run Python**, check by hand: every line has exactly two fields, no side is empty, and no two fronts are the same.
 

@@ -36,20 +36,20 @@ The pattern that makes scripts most useful is **validate, then fix, in a loop**:
 ### Step 4: Check the file, then fix
 
 Run `python3 scripts/check_cards.py <deck-file> --format anki`.
-Fix every error and run it again until it reports 0 errors.
+Fix reported errors and rerun the check. Stop when it passes. If the same error persists after a repair, or a dependency is unavailable, preserve the output and report the blocker instead of looping.
 ```
 
 ### Writing a good bundled script
 
-- **Standard library only**, if you can. Every dependency is something the user's machine might not have.
+- **Use dependencies deliberately.** Prefer the standard library for simple checks, but use a maintained parser for complex formats such as YAML. Declare dependencies and installation steps; do not trade correctness for zero dependencies.
 - **Clear, specific messages:** `line 5: same front as line 4` tells the agent exactly what to fix. `invalid input` doesn't.
 - **Exit code 0 for success, 1 for errors**, so the agent (and CI) can tell at a glance.
 - **A docstring at the top** with usage and what it checks. The agent may read it to understand the output.
 - **Test it.** It's real code. See [`tests/test_check_cards.py`](../tests/test_check_cards.py).
 
-### Always give a fallback
+### Give a fallback when it can preserve correctness
 
-Some environments can't run code (some chat apps, locked-down machines). Tell the agent what to do by hand:
+Some environments cannot run code. If a manual check is practical, describe it and disclose what was not verified. If it cannot establish correctness, report the blocker instead of claiming equivalence:
 
 ```markdown
 **If you can't run Python**, check by hand: every line has exactly two fields,
@@ -64,12 +64,18 @@ Templates, images, fonts, or data files that end up in what the skill produces (
 
 ## What not to put in the skill folder
 
-- **No `README.md`.** Documentation for the agent goes in `SKILL.md` or `references/`. A README for humans belongs at the repo root, outside the skill folder ([lesson 8](08-publishing.md)).
+- **Avoid redundant documentation.** A README inside a skill is allowed by the open format. Usually keep installation and repository documentation outside it; include extra files only when they serve a concrete purpose ([lesson 8](08-publishing.md)).
 - **No secrets.** API keys and tokens never go in a skill.
 - **No large generated files** the agent doesn't need.
 
 ## Exercise
 
 Look at [`check_cards.py`](../examples/02-with-references/flashcard-maker/scripts/check_cards.py). Name one more check that should be in the script, and one that should stay as an instruction in `references/card-writing.md`. Why?
+
+## Your deliverable
+
+A resource plan, which may contain no extra files.
+
+**Self-check:** Does every dependency or reference earn its maintenance cost?
 
 **Next:** [6. Test your skill](06-testing.md)

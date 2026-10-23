@@ -2,7 +2,7 @@
 
 A **skill** is a folder of instructions an AI agent can pick up when a task calls for it. Think of it as a recipe card you write once: instead of explaining your process in every conversation ("check the staged diff, keep the subject under 50 characters, explain *why* in the body..."), you put it in a skill, and the agent follows it whenever the task comes up.
 
-Skills follow an open format, [Agent Skills](https://agentskills.io/specification), so the same folder works in Claude Code, Codex, claude.ai, and other agents that support the standard.
+Skills follow an open format, [Agent Skills](https://agentskills.io/specification), so the same structure can be used by supporting agents. Tool access, dependencies, permissions, and discovery still need testing on each target platform.
 
 ## Anatomy of a skill folder
 
@@ -38,15 +38,15 @@ An agent might have dozens of skills installed. If it read all of them into its 
 
 | Level | What loads | When | Rough size |
 |---|---|---|---|
-| 1. Metadata | `name` + `description` of **every** installed skill | Always, at the start of each session | ~100 tokens per skill |
-| 2. Instructions | The body of **one** `SKILL.md` | When the agent decides that skill fits the task | Keep it under ~5,000 words |
+| 1. Metadata | `name` + `description` of available skills | During discovery; platform and settings determine availability | ~100 tokens per skill |
+| 2. Instructions | The body of **one** `SKILL.md` | When the agent decides that skill fits the task | Under 5,000 tokens recommended by the spec; not a loading limit |
 | 3. Resources | Specific files in `references/`, `scripts/`, `assets/` | Only when a step in `SKILL.md` points to them | As large as needed |
 
 An analogy: level 1 is the table of contents of a cookbook, level 2 is the recipe you turned to, level 3 is the appendix on how to temper chocolate, which you only read if this recipe needs it.
 
 This shapes how you write skills:
 
-- **The description decides everything.** At level 1 it's the *only* thing the agent sees. A great skill with a vague description never runs. ([Lesson 3](03-frontmatter.md).)
+- **The description guides discovery.** A vague description makes selection less reliable; explicit invocation and platform settings also matter. ([Lesson 3](03-frontmatter.md).)
 - **The body should be focused.** Every word is loaded each time the skill runs.
 - **Detail goes in reference files** that the body points to, so the agent reads only what this particular task needs. ([Lesson 5](05-scripts-and-references.md).)
 
@@ -70,5 +70,11 @@ This shapes how you write skills:
 3. Two problems: names must be lowercase with hyphens (`commit-message`), and the file must be named exactly `SKILL.md`.
 
 </details>
+
+## Your deliverable
+
+A minimal skill folder sketch.
+
+**Self-check:** Can you explain why each optional file is needed? Omit files with no purpose.
 
 **Next:** [2. Plan your use cases](02-plan-use-cases.md)
