@@ -27,6 +27,8 @@ The agent always sees every installed skill's `name` and `description`. When you
 
 ## Quickstart: your first skill in 5 minutes
 
+You need git, Python 3 (tested with 3.12; no packages), and an agent that supports skills.
+
 **1. Get this repo.**
 
 ```bash
@@ -56,7 +58,7 @@ Fix anything marked `error`, then run it again.
 | Agent | All projects | One project | Call it by name |
 |---|---|---|---|
 | [Claude Code](platforms/claude-code.md) | `~/.claude/skills/` | `.claude/skills/` | `/my-first-skill` |
-| [Codex](platforms/codex.md) | `~/.agents/skills/` | `.agents/skills/` | `$my-first-skill` |
+| [Codex](platforms/codex.md) (restart if the skill doesn't appear) | `~/.agents/skills/` | `.agents/skills/` | `$my-first-skill` |
 | [claude.ai](platforms/claude-ai.md) | Upload a zip in Customize, Skills | | |
 
 For Claude Code:
