@@ -13,7 +13,7 @@ Why: one real run gives you specific, surprising failures fast. readme-organizer
 - suggested putting back text the author had just deliberately removed,
 - assumed a browser game must be run locally.
 
-No list of made-up prompts would have found those. Each became one specific line in the skill.
+These failures were easy to miss in a paper review. Each suggested a targeted correction to test on other projects, rather than a universal rule to add automatically.
 
 A useful variant: do the task *with the agent but without a skill*, steering it until the result is great. Then turn the steering you had to do into the skill's instructions.
 
@@ -52,10 +52,10 @@ For each use case from [lesson 2](02-plan-use-cases.md), write the setup and wha
 
 | Case | Setup | Expected |
 |---|---|---|
-| Normal | Notes file with 10 facts, user says "Anki" | 10 one-fact cards, checker reports 0 errors |
+| Normal | Notes with 10 relevant facts, user says "Anki" | Relevant facts covered accurately, one concept per card, valid import format |
 | Ask first | User doesn't name an app | Agent asks "Anki, Quizlet, or something else?" |
 | Edge case | A fact contains a comma | The field is quoted; the checker passes |
-| Consistency | Same request, 3 runs | Same number of cards, same format each time |
+| Consistency | Same request, 3 runs | Source fidelity, coverage, atomic cards, and import format remain good; wording and card count may vary |
 
 Also unit-test any bundled script, like ordinary code ([`tests/`](../tests/)).
 
@@ -63,12 +63,20 @@ Also unit-test any bundled script, like ordinary code ([`tests/`](../tests/)).
 
 Run the same task with and without the skill and compare: how many messages, how many corrections you had to make, how many failed commands. If the skill doesn't clearly win, it isn't earning its place in every session's context.
 
+## Test transfer, not memorization
+
+After improving the initial task, set aside unfamiliar inputs that you did not use to write the instructions. Try a different project type, a shorter source, and an ambiguous request. A change that fixes one example can damage another.
+
+Record the input, agent/model, skill revision, observed outcome, and corrections needed. Compare with and without the skill on the same material using the same quality criteria. Repeat when variation could change your conclusion; do not require identical phrasing or arbitrary counts.
+
+Add a failure-path case: the checker is unavailable or reports the same error after a repair. The agent should preserve useful work, state what remains unverified, and stop the repair loop.
+
 ## Iterate
 
 Skills are never "done". After each round of testing or real use:
 
 1. Write down what went wrong, specifically ("asked for the app even though the user said Anki").
-2. Fix it with the smallest specific change: a line in `## Important`, a table row, a troubleshooting entry, a negative trigger.
+2. Make the smallest supported change. Sometimes removing a rigid rule or improving an example works better than adding another instruction.
 3. Add the failure as a test case so it can't quietly come back.
 4. Bump `metadata.version`.
 
@@ -88,5 +96,11 @@ Run them in CI on every push ([lesson 8](08-publishing.md)). They catch the bori
 ## Exercise
 
 Write 5 should-trigger and 5 should-not-trigger prompts for [`flashcard-maker`](../examples/02-with-references/flashcard-maker/SKILL.md). Which of your should-not prompts is most likely to trigger it by mistake? What would you add to the description to prevent that?
+
+## Your deliverable
+
+A test record for the original task and an unfamiliar input.
+
+**Self-check:** What improved versus no skill, and what remains unverified?
 
 **Next:** [7. Patterns](07-patterns.md)

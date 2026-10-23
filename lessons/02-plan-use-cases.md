@@ -17,7 +17,7 @@ Steps:    1. Check the project is committed and pushed
 Result:   A ranked list of ready-to-paste fixes; README untouched
 ```
 
-That's a use case from [the case study](../examples/03-readme-organizer/). Writing it forced decisions that became the skill's most important rules: "check it's pushed first" and "never overwrite".
+That's a use case from [the case study](../examples/03-readme-organizer/). Its pushed-state check and suggestions-only workflow are choices for that example, not requirements for README work generally. Preserve the user's scope and any authorization already given.
 
 Questions to answer for each use case:
 
@@ -26,7 +26,7 @@ Questions to answer for each use case:
 - What tools does the agent need: just reading and writing files, running commands, or an MCP server?
 - What do *you* know about doing this well that the agent wouldn't? That knowledge is the real value of the skill.
 
-If you can't write two use cases, the skill may be too vague. If you have eight, it may be two skills.
+One well-defined use case can justify a skill. Split a skill when its capabilities need different discovery descriptions or unrelated instructions, not at a fixed use-case count.
 
 ## Three kinds of skills
 
@@ -35,7 +35,7 @@ Most skills fall into one of three categories. Knowing which you're building tel
 | Category | What it does | Focus on | Example |
 |---|---|---|---|
 | **Creating documents and assets** | Produces consistent output: documents, slides, code, designs | Templates, style rules, a quality checklist before finishing | [`flashcard-maker`](../examples/02-with-references/flashcard-maker/), readme-organizer |
-| **Automating a workflow** | Runs a multi-step process the same way every time | Ordered steps, checks between steps, what to do when a step fails | [`commit-message`](../examples/01-minimal/commit-message/) |
+| **Automating a workflow** | Runs a process with explicit dependencies and checks | Ordered steps, checks between steps, what to do when a step fails | [`commit-message`](../examples/01-minimal/commit-message/) |
 | **Enhancing an MCP server** | Teaches the agent to use a connected service well | Which tool calls to make, in what order, and how to handle API errors | A skill that turns "plan this sprint" into the right sequence of Linear calls |
 
 ## Define success before you build
@@ -59,5 +59,11 @@ Write these down now. [Lesson 6](06-testing.md) turns them into tests.
 ## Exercise
 
 Pick a task you've explained to an AI agent more than twice. Write two use cases for it in the format above, and one success criterion you could count.
+
+## Your deliverable
+
+One concrete use case and a quality criterion.
+
+**Self-check:** Does success describe a useful result, rather than a fixed number of steps?
 
 **Next:** [3. Write the frontmatter](03-frontmatter.md)

@@ -1,34 +1,17 @@
 #!/usr/bin/env python3
-"""Check skill folders against the Agent Skills spec and Anthropic's skill guide.
+"""Validate skill structure and YAML; lint portability and authoring choices.
 
-Usage:
-    python3 tools/validate_skill.py [path ...]
-
-Each path is either a skill folder (it contains SKILL.md) or a folder to
-search for skills. With no paths, it searches examples/.
-
-Errors (the skill may fail to load, or breaks a published rule):
-  - SKILL.md exists with exactly that spelling
-  - frontmatter is wrapped in --- lines and has no unclosed quotes
-  - name: 1-64 characters, lowercase letters, digits and single hyphens,
-    matches the folder, and avoids the reserved words "claude"/"anthropic"
-  - description: present and at most 1024 characters
-  - compatibility: at most 500 characters if present
-  - no < or > in any frontmatter value
-  - no README.md inside the skill folder
-  - every references/, scripts/ or assets/ path mentioned in SKILL.md exists
-  - SKILL.md is under 5,000 words
-
-Warnings (the skill loads, but probably works worse):
-  - SKILL.md is over 500 lines
-  - the description never says when to use the skill
-  - a top-level field is not in the open spec (fine if your agent supports it)
-
-Exit code: 0 if no skill has errors, 1 otherwise. Standard library only.
+Usage: python3 tools/validate_skill.py [path ...]
+Install requirements.txt first. Errors identify invalid structure, YAML, field
+values, or missing referenced resources. Warnings identify platform compatibility
+concerns and style suggestions; they do not establish whether a skill will load.
+Exit code: 0 without errors, 1 otherwise. This does not test agent behavior.
 """
 import re
 import sys
 from pathlib import Path
+
+import yaml
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 RESERVED_WORDS = ("claude", "anthropic")
@@ -40,46 +23,51 @@ MAX_LINES = 500
 SPEC_FIELDS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
 WHEN_HINTS = ("use when", "use for", "use this when", "use it when", "when the user", "when user")
 BUNDLED_PATH = re.compile(r"\b((?:references|scripts|assets)/[\w./-]+\.\w+)")
-FIELD_LINE = re.compile(r"^([A-Za-z_][\w-]*):\s*(.*)$")
+
+
+class UniqueKeyLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects ambiguous duplicate mapping keys."""
+
+
+def unique_mapping(loader, node, deep=False):
+    result = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            if key in result:
+                raise yaml.constructor.ConstructorError(
+                    None, None, f"duplicate key: {key}", key_node.start_mark)
+            result[key] = loader.construct_object(value_node, deep=deep)
+        except TypeError as exc:
+            raise yaml.constructor.ConstructorError(
+                None, None, "mapping keys must be hashable", key_node.start_mark) from exc
+    return result
+
+
+UniqueKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
 
 
 def split_frontmatter(text):
-    """Return the text between the opening and closing --- lines, or None."""
-    if not text.startswith("---\n"):
+    """Extract YAML using exact delimiter lines, not prefix matches."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
         return None
-    end = text.find("\n---", 3)
-    if end == -1:
-        return None
-    return text[4:end + 1]
+    for index, line in enumerate(lines[1:], 1):
+        if line == "---":
+            return "\n".join(lines[1:index])
+    return None
 
 
 def parse_fields(block):
-    """Read top-level `key: value` pairs from a frontmatter block.
-
-    This is not a full YAML parser. It handles what skills actually use:
-    plain or quoted one-line values, block scalars (`>` or `|`) and indented
-    continuation lines, and nested maps such as metadata (kept as raw text).
-    Returns (fields, problems), where problems are syntax errors found.
-    """
-    fields = {}
-    problems = []
-    current = None
-    for line in block.splitlines():
-        match = FIELD_LINE.match(line)
-        if match and not line.startswith((" ", "\t")):
-            current, value = match.group(1), match.group(2).strip()
-            if value in (">", "|", ">-", "|-"):
-                value = ""
-            fields[current] = value
-            for quote in ('"', "'"):
-                if value.startswith(quote) and (len(value) < 2 or not value.endswith(quote)):
-                    problems.append(f"{current} opens a {quote} quote that never closes")
-        elif current and line.strip():
-            fields[current] = (fields[current] + " " + line.strip()).strip()
-    for key, value in fields.items():
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-            fields[key] = value[1:-1]
-    return fields, problems
+    """Parse safe YAML and require a mapping with string field names."""
+    try:
+        fields = yaml.load(block, Loader=UniqueKeyLoader)
+    except yaml.YAMLError as exc:
+        return {}, [f"invalid YAML: {exc}"]
+    if not isinstance(fields, dict) or not all(isinstance(k, str) for k in fields):
+        return {}, ["frontmatter must be a mapping with string field names"]
+    return fields, []
 
 
 def find_skill_file(skill_dir):
@@ -104,7 +92,18 @@ def validate(skill_dir):
     if block is None:
         return ["frontmatter must start and end with --- lines"], warnings
     fields, problems = parse_fields(block)
-    errors.extend(problems)
+    if problems:
+        return problems, warnings
+    for key in ("name", "description", "license", "compatibility", "allowed-tools"):
+        if key in fields and not isinstance(fields[key], str):
+            errors.append(f"{key} must be a string")
+    if "metadata" in fields:
+        metadata = fields["metadata"]
+        if not isinstance(metadata, dict) or not all(
+                isinstance(k, str) and isinstance(v, str) for k, v in metadata.items()):
+            errors.append("metadata must map string keys to string values")
+    if errors:
+        return errors, warnings
 
     name = fields.get("name", "")
     if not name:
@@ -117,41 +116,43 @@ def validate(skill_dir):
         if name != skill_dir.name:
             errors.append(f"name '{name}' does not match folder '{skill_dir.name}'")
         if any(word in name for word in RESERVED_WORDS):
-            errors.append(f"name '{name}' uses a reserved word ({', '.join(RESERVED_WORDS)})")
+            warnings.append(f"compatibility: name '{name}' uses a Claude-reserved word ({', '.join(RESERVED_WORDS)}); check the target platform")
 
     description = fields.get("description", "")
-    if not description:
+    if not description.strip():
         errors.append("frontmatter has no description")
     else:
         if len(description) > MAX_DESCRIPTION:
             errors.append(f"description is {len(description)} characters (max {MAX_DESCRIPTION})")
         if not any(hint in description.lower() for hint in WHEN_HINTS):
-            warnings.append("description never says when to use the skill (e.g. 'Use when ...')")
+            warnings.append("style: description may not explain when to use the skill; review its meaning, not just keywords")
 
     compatibility = fields.get("compatibility")
+    if compatibility is not None and not compatibility.strip():
+        errors.append("compatibility must be non-empty when provided")
     if compatibility is not None and len(compatibility) > MAX_COMPATIBILITY:
         errors.append(f"compatibility is {len(compatibility)} characters (max {MAX_COMPATIBILITY})")
 
     for key, value in fields.items():
-        if "<" in value or ">" in value:
-            errors.append(f"{key} contains < or >, which are not allowed in frontmatter")
+        if "<" in str(value) or ">" in str(value):
+            warnings.append(f"compatibility: {key} contains < or >; check restrictions on the target platform")
 
     for key in sorted(set(fields) - SPEC_FIELDS):
-        warnings.append(f"'{key}' is not in the open spec; agents that don't know it will ignore it")
+        warnings.append(f"compatibility: '{key}' is outside the open spec; support depends on the target agent")
 
     if (skill_dir / "README.md").exists():
-        errors.append("README.md belongs at the repo root, not inside the skill folder")
+        warnings.append("style: README.md inside the skill is allowed; keep it only if it serves a useful purpose")
 
     for path in sorted(set(BUNDLED_PATH.findall(text))):
         if not (skill_dir / path).exists():
-            errors.append(f"SKILL.md mentions {path}, which does not exist")
+            errors.append(f"resource: SKILL.md mentions {path}, which does not exist")
 
     words = len(text.split())
     if words > MAX_WORDS:
-        errors.append(f"SKILL.md is {words} words (keep it under {MAX_WORDS}; move detail to references/)")
+        warnings.append(f"style: SKILL.md is {words} words; consider moving conditional detail to references/ (not a loading limit)")
     lines = text.count("\n") + 1
     if lines > MAX_LINES:
-        warnings.append(f"SKILL.md is {lines} lines (aim for under {MAX_LINES})")
+        warnings.append(f"style: SKILL.md is {lines} lines (aim for under {MAX_LINES})")
 
     return errors, warnings
 

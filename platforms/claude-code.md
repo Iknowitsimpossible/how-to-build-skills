@@ -36,7 +36,7 @@ To test triggering, start a fresh session, send a should-trigger prompt, and wat
 
 ## Extra frontmatter fields
 
-These work in Claude Code; other agents ignore them. The validator in this repo reports them as warnings, not errors, for that reason.
+These fields are Claude Code extensions. Other agents may handle them differently; verify behavior on each supported platform. The validator reports compatibility warnings rather than treating them as open-format errors.
 
 | Field | What it does |
 |---|---|

@@ -96,12 +96,62 @@ class TestFileAndFrontmatter(SkillTestCase):
 
     def test_unclosed_quote(self):
         skill = self.simple_skill(description='"Does things. Use when asked.')
-        self.assertHasError(skill, "never closes")
+        self.assertHasError(skill, "invalid YAML")
 
     def test_readme_inside_skill(self):
         skill = self.simple_skill()
         (skill / "README.md").write_text("# Hi\n")
-        self.assertHasError(skill, "README.md belongs at the repo root")
+        self.assertHasWarning(skill, "README.md inside the skill is allowed")
+
+
+class TestYamlParsing(SkillTestCase):
+    def test_inline_comment_is_not_part_of_name(self):
+        skill = self.make_skill("name: my-skill # folder name\ndescription: Use when reviewing.")
+        self.assertEqual(self.check(skill), ([], []))
+
+    def test_unquoted_colon_is_rejected(self):
+        self.assertHasError(self.simple_skill(description="Use when: reviewing."), "invalid YAML")
+
+    def test_duplicate_fields_are_rejected(self):
+        self.assertHasError(self.simple_skill(extra="name: another"), "duplicate key")
+
+    def test_non_string_fields_do_not_crash(self):
+        for field in ("name", "description", "compatibility", "license", "allowed-tools"):
+            with self.subTest(field=field):
+                values = {"name": "my-skill", "description": GOOD_DESCRIPTION, field: "[one, two]"}
+                skill = self.make_skill("\n".join(f"{k}: {v}" for k, v in values.items()))
+                self.assertHasError(skill, f"{field} must be a string")
+
+    def test_metadata_values_must_be_strings(self):
+        self.assertHasError(self.simple_skill(extra="metadata:\n  version: 1.0"), "metadata must map")
+
+    def test_multiline_quoted_value_is_valid(self):
+        skill = self.make_skill('name: my-skill\ndescription: "Use when reviewing\n  notes."')
+        self.assertEqual(self.check(skill), ([], []))
+
+    def test_delimiter_prefix_is_not_a_delimiter(self):
+        self.assertIsNone(validate_skill.split_frontmatter("---\nname: demo\n---oops\n"))
+
+    def test_yaml_document_must_be_mapping(self):
+        fields, errors = validate_skill.parse_fields("- item")
+        self.assertEqual(fields, {})
+        self.assertTrue(errors)
+
+    def test_unsafe_yaml_tag_is_rejected(self):
+        self.assertHasError(self.simple_skill(extra="metadata: !!python/object:builtins.object {}"), "invalid YAML")
+
+    def test_duplicate_nested_metadata_is_rejected(self):
+        self.assertHasError(self.simple_skill(extra="metadata:\n  author: first\n  author: second"), "duplicate key")
+
+    def test_empty_compatibility_is_rejected(self):
+        self.assertHasError(self.simple_skill(extra='compatibility: ""'), "non-empty")
+
+    def test_style_warnings_do_not_fail_cli(self):
+        skill = self.simple_skill(body="word " * 5001)
+        (skill / "README.md").write_text("# Useful notes")
+        result = subprocess.run([sys.executable, str(REPO / "tools/validate_skill.py"), str(skill)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("style:", result.stdout)
 
 
 class TestName(SkillTestCase):
@@ -123,7 +173,7 @@ class TestName(SkillTestCase):
     def test_reserved_words(self):
         for name in ("claude-helper", "my-anthropic-tool"):
             with self.subTest(name=name):
-                self.assertHasError(self.simple_skill(name=name, folder=name), "reserved word")
+                self.assertHasWarning(self.simple_skill(name=name, folder=name), "reserved word")
 
 
 class TestDescriptionAndFields(SkillTestCase):
@@ -139,11 +189,11 @@ class TestDescriptionAndFields(SkillTestCase):
 
     def test_angle_brackets(self):
         skill = self.simple_skill(description="Use when the user pastes <html>.")
-        self.assertHasError(skill, "contains < or >")
+        self.assertHasWarning(skill, "contains < or >")
 
     def test_angle_brackets_in_metadata(self):
         skill = self.simple_skill(extra="metadata:\n  author: Name <me@example.com>")
-        self.assertHasError(skill, "metadata contains < or >")
+        self.assertHasWarning(skill, "metadata contains < or >")
 
     def test_compatibility_too_long(self):
         skill = self.simple_skill(extra="compatibility: " + "x" * 501)
@@ -168,7 +218,7 @@ class TestBody(SkillTestCase):
         self.assertEqual(self.check(skill), ([], []))
 
     def test_too_many_words(self):
-        self.assertHasError(self.simple_skill(body="word " * 5001), "words")
+        self.assertHasWarning(self.simple_skill(body="word " * 5001), "words")
 
     def test_too_many_lines_warns(self):
         self.assertHasWarning(self.simple_skill(body="line\n" * 501), "lines")
@@ -196,13 +246,15 @@ class TestRealExamples(unittest.TestCase):
         self.assertIn("3 passed, 0 failed", result.stdout)
 
     def test_template_frontmatter_parses(self):
-        text = (REPO / "templates" / "SKILL.template.md").read_text()
-        block = validate_skill.split_frontmatter(text)
-        self.assertIsNotNone(block)
-        fields, problems = validate_skill.parse_fields(block)
-        self.assertEqual(problems, [])
-        self.assertIn("name", fields)
-        self.assertIn("description", fields)
+        for name in ("SKILL.template.md", "SKILL.minimal.md"):
+            with self.subTest(template=name):
+                text = (REPO / "templates" / name).read_text()
+                block = validate_skill.split_frontmatter(text)
+                self.assertIsNotNone(block)
+                fields, problems = validate_skill.parse_fields(block)
+                self.assertEqual(problems, [])
+                self.assertIn("name", fields)
+                self.assertIn("description", fields)
 
 
 if __name__ == "__main__":

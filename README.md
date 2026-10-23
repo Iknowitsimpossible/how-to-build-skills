@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/Iknowitsimpossible/how-to-build-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/Iknowitsimpossible/how-to-build-skills/actions/workflows/ci.yml)
 
-A hands-on course in writing **Agent Skills**: folders of instructions that teach an AI coding agent to do a task your way, every time. One skill works in Claude Code, Codex, claude.ai, and any other agent that supports the [open standard](https://agentskills.io).
+A hands-on course in writing **Agent Skills**: folders of instructions that teach an AI coding agent to follow a repeatable process for your tasks. The [open format](https://agentskills.io) is portable; tools, permissions, dependencies, and discovery behavior still depend on the agent.
 
-You'll get eight short lessons, three working example skills (from one file to a real published skill), a template, and a validator that catches the mistakes that stop skills from loading.
+You'll get eight short lessons, three working example skills (from one file to a real published skill), two templates, and a validator that checks structure and YAML while separating errors from authoring suggestions.
 
 ## What is a skill?
 
@@ -23,27 +23,52 @@ description: Writes a git commit message for the staged changes. Use when the us
 2. Write a subject line of at most 50 characters, in the imperative mood...
 ```
 
-The agent always sees every installed skill's `name` and `description`. When your request matches a description, it loads that skill's instructions and follows them. So you explain your process once, and the agent applies it whenever it's relevant.
+Agents typically use available skills' `name` and `description` to decide what to load. Discovery and explicit invocation vary by platform; test both in the agents you support. So you explain your process once, and the agent applies it whenever it's relevant.
 
-## Quickstart: your first skill in 5 minutes
+## Choose your path
 
-You need git, Python 3 (tested with 3.12; no packages), and an agent that supports skills.
+**Build your first skill:** follow the quickstart, then [plan a use case](lessons/02-plan-use-cases.md). Start with one file.
+
+**Improve an existing skill:** begin with [behavioral testing](lessons/06-testing.md), then [adjust its level of detail](lessons/04-instructions.md#choose-how-much-to-prescribe).
+
+### What you will learn to change
+
+An illustrative README review:
+
+> **Vague instruction:** “Make the README better.”
+>
+> **Unhelpful result:** “Add a screenshot and improve setup.” The author still has to work out what to edit.
+>
+> **Better instruction:** Identify each edit's location and provide complete replacement text. Separate ready edits from missing assets and author decisions.
+>
+> **Expected result:** “R1: replace Run locally with these commands. R2: supply a gameplay image before adding its link.”
+
+Test that expected improvement on an unfamiliar repository before treating it as reliable. The [case study](examples/03-readme-organizer/) shows how to learn from failures without treating one project's preferences as universal rules.
+
+## Quickstart: build and try a small skill
+
+You need git, Python 3, and an agent that supports skills. The validator uses PyYAML; CI runs on Python 3.12.
 
 **1. Get this repo.**
 
 ```bash
 git clone https://github.com/Iknowitsimpossible/how-to-build-skills.git
 cd how-to-build-skills
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
+
+These commands use a POSIX shell. On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1`.
 
 **2. Copy the template into a new skill folder.** The folder name must match the `name` in the file.
 
 ```bash
 mkdir -p my-skills/my-first-skill
-cp templates/SKILL.template.md my-skills/my-first-skill/SKILL.md
+cp templates/SKILL.minimal.md my-skills/my-first-skill/SKILL.md
 ```
 
-**3. Edit `my-skills/my-first-skill/SKILL.md`.** Set `name: my-first-skill`, write a description that says what it does and when to use it ([lesson 3](lessons/03-frontmatter.md)), and replace the bracketed steps with your own.
+**3. Edit `my-skills/my-first-skill/SKILL.md`.** Set `name: my-first-skill`, write a description that says what it does and when to use it ([lesson 3](lessons/03-frontmatter.md)), and replace the bracketed guidance with your own. Use the [workflow template](templates/SKILL.template.md) only when ordered steps and checks help.
 
 **4. Check it.**
 
@@ -105,21 +130,24 @@ The lessons teach the open standard, which every agent below supports. These pag
 
 ## The validator
 
-[`tools/validate_skill.py`](tools/validate_skill.py) checks one skill, or every skill in a folder, against the [Agent Skills spec](https://agentskills.io/specification) and Anthropic's published rules. It needs only Python 3 and no packages.
+[`tools/validate_skill.py`](tools/validate_skill.py) checks one skill or a folder of skills. Install [requirements.txt](requirements.txt) first. It uses safe YAML parsing, rejects duplicate keys, and distinguishes structural errors from portability and style guidance. The [Agent Skills specification](https://agentskills.io/specification) is the source for format requirements.
 
 ```bash
 python3 tools/validate_skill.py path/to/skill-or-folder
 ```
 
-**Errors** (the skill may not load): misspelled `SKILL.md`, missing `---` lines, unclosed quotes, a bad or mismatched `name`, a missing or too-long `description`, `<` or `>` in the frontmatter, a `README.md` inside the skill, or a mentioned `references/`/`scripts/` file that doesn't exist.
+**Errors:** missing or misspelled `SKILL.md`, malformed YAML, duplicate keys, invalid field types or lengths, invalid names, and missing referenced resources. Resource checks are workflow checks, not proof of a loading failure.
 
-**Warnings** (it loads but may work worse): a description that never says when to use it, a `SKILL.md` over 500 lines, or fields outside the open spec.
+**Compatibility warnings:** Claude-reserved names, angle brackets, and fields outside the open spec. Check restrictions in the target platform.
 
-Copy it into your own skill repo and run it in CI, like this repo does.
+**Style suggestions:** unclear usage descriptions, large instruction files, and a README inside the skill folder. These are not universal loading failures. Warnings do not fail CI. Passing validation does not establish that an agent will load the skill or perform the task correctly.
+
+Copy the validator and its dependency declaration into your own skill repo and run it in CI, like this repo does.
 
 ## Development
 
 ```bash
+python3 -m pip install -r requirements.txt
 python3 tools/validate_skill.py examples    # validate the example skills
 python3 -m unittest discover tests          # test the validator and the flashcard checker
 ```

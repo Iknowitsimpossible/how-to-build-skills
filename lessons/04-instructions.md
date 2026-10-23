@@ -32,15 +32,25 @@ Agents pay the most attention to what they read first, and long instructions get
 
 Keep this to two or three rules. If everything is important, nothing is. It's fine to repeat a critical rule inside the step where it applies.
 
-## Be specific: name the command, the file, the number
+## Choose how much to prescribe
 
-Vague instructions get interpreted differently every run. Specific ones don't.
+Use an outcome and decision criteria for open-ended writing, design, or review. Use a preferred workflow when order helps. Use exact commands and limits when deviation risks an incorrect result or an unintended side effect.
+
+For example, “preserve the author's voice and give each proposed edit a location and replacement” leaves room for judgment. An import format requiring two CSV columns needs an exact schema.
+
+Add guidance the agent would otherwise miss. Do not restate ordinary capabilities or turn one author's preference into a global rule. Respect the user's current request and authorization; ask only when missing information or an unapproved consequential action requires it.
+
+Start with the [minimal template](../templates/SKILL.minimal.md). Add steps, references, scripts, and troubleshooting only when they improve the outcome.
+
+## Be specific where correctness depends on it
+
+Specific instructions reduce ambiguity, but do not guarantee identical behavior. Prescribe only the details that matter to correctness or the intended result.
 
 | Vague | Specific |
 |---|---|
 | Look at the changes. | Run `git diff --staged --stat`, then `git diff --staged`. |
 | Keep the subject short. | Subject line: at most 50 characters, imperative mood ("Add", not "Added"), no period. |
-| Validate the output. | Run `python3 scripts/check_cards.py <file> --format anki`. Fix every error and run it again until it reports 0 errors. |
+| Validate the output. | Run `python3 scripts/check_cards.py <file> --format anki`. Fix reported errors and recheck; stop and explain if the same failure persists or the check cannot run. |
 | Use the right template. | A table mapping each project type to its template file (see below). |
 
 A good test: could two different people follow the step and do the same thing?
@@ -57,14 +67,14 @@ When the next step depends on the situation, a small table is clearer than parag
 | Anything else | `references/anki.md`, and tell the user |
 ```
 
-Always include a row for "none of the above".
+Include a fallback when unmatched inputs are plausible; do not silently force an incompatible format.
 
 ## Say when to stop and ask
 
 Agents tend to either barrel ahead or ask too much. Tell them exactly which situations need the user:
 
 ```markdown
-If nothing is staged, tell the user and ask whether to stage everything or stop.
+If nothing is staged, explain that no staged diff is available. Ask which specific changes the user wants included; do not propose staging unrelated files by default.
 Otherwise continue without asking.
 ```
 
@@ -102,7 +112,7 @@ This saves the agent from improvising a fix, which is where skills tend to go of
 
 ## Keep it lean
 
-- Aim for under 500 lines and well under 5,000 words. The whole body loads every time the skill runs.
+- Keep the body as short as the task permits. The spec recommends under 500 lines and under 5,000 tokens, not a 5,000-word hard limit. The whole body loads every time the skill runs.
 - Move long reference material (style guides, API details, templates) into `references/` ([lesson 5](05-scripts-and-references.md)).
 - Prefer numbered steps and bullets to paragraphs.
 - Write for the agent, not for a human reader: no marketing, no history of why the skill exists.
@@ -113,11 +123,17 @@ This saves the agent from improvising a fix, which is where skills tend to go of
 |---|---|---|
 | Skips a rule | It's buried in the middle | Move it to `## Important`; repeat it in the step |
 | Does it differently each time | The step is ambiguous | Name the exact command, file, or number |
-| Skips the checking step | Checking sounds optional | Make it a numbered step with "repeat until 0 errors"; consider a script |
+| Skips the checking step | Checking sounds optional | Give validation a clear success condition and an exit for persistent failures; consider a script |
 | Rushes through | Instructions are long and flat | Shorten; move detail to `references/` |
 
 ## Exercise
 
 Open [`examples/01-minimal/commit-message/SKILL.md`](../examples/01-minimal/commit-message/SKILL.md). Find one vague phrase and make it more specific. Then find the line that tells the agent when *not* to ask the user anything.
+
+## Your deliverable
+
+A first instruction draft.
+
+**Self-check:** Which constraints protect correctness, and which should remain choices?
 
 **Next:** [5. Scripts and references](05-scripts-and-references.md)
